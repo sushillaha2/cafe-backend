@@ -8,9 +8,7 @@ import authRoutes from './routes/AuthRoutes.js';
 import subscribeRoute from './routes/subscribeRoute.js';
 import contactRoute from "./routes/ContactRoute.js";
 import placeOrderRoutes from './routes/placeOrderRoutes.js';
-
 import adminRoutes from "./routes/adminRoutes.js";
-
 
 dotenv.config();
 
@@ -33,13 +31,8 @@ app.get('/', (req, res) => {
   res.send('☕ Coffee Backend Server is Running...');
 });
 
-
-
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB Connected');
     const PORT = process.env.PORT || 5000;
