@@ -1,14 +1,12 @@
-
 import express from "express";
-// import { clearCart } from "../controllers/cartController.js"; 
 const router = express.Router();
 import {
   clearCart,
   createOrUpdateCart,
   getCartByUser,
   deleteCartItem,
-  updateCartItemQuantity, //  New controller for quantity update
-} from "../controllers/cartController.js";
+  updateCartItemQuantity, 
+} from "../controllers/CartController";
 
 console.log(" Cart routes loaded");
 
