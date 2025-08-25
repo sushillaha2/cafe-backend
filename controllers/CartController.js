@@ -1,5 +1,3 @@
-
-
 import Cart from "../models/Cart.js";
 
 // Create or update cart

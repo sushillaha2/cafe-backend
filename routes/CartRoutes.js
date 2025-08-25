@@ -1,8 +1,9 @@
 
 import express from "express";
-import { clearCart } from "../controllers/cartController.js"; 
+// import { clearCart } from "../controllers/cartController.js"; 
 const router = express.Router();
 import {
+  clearCart,
   createOrUpdateCart,
   getCartByUser,
   deleteCartItem,
