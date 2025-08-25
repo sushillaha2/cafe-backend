@@ -6,7 +6,7 @@ import {
   getCartByUser,
   deleteCartItem,
   updateCartItemQuantity, 
-} from "../controllers/CartController";
+} from "../controllers/CartController.js";
 
 console.log(" Cart routes loaded");
 
