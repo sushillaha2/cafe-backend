@@ -250,26 +250,39 @@ export const login = async (req, res) => {
 };
 
 // ============================
-// Step 1: Send OTP
+// Step 1: Send OTP (with validation)
 // ============================
 export const sendOtp = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    // Input validation
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "All fields (name, email, password) are required",
+      });
+    }
+
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000);
+
+    // Hash password securely
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Store OTP and user data temporarily
     otpStore.set(email, {
       otp,
       data: { name, email, password: hashedPassword },
-      expiresAt: Date.now() + 5 * 60 * 1000,
+      expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
     });
 
+    // Setup nodemailer transporter
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -278,6 +291,7 @@ export const sendOtp = async (req, res) => {
       },
     });
 
+    // Send OTP email
     await transporter.sendMail({
       from: `"Bean Scene OTP" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -288,9 +302,13 @@ export const sendOtp = async (req, res) => {
     res.status(200).json({ message: "OTP sent successfully" });
   } catch (err) {
     console.error("Send OTP error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Failed to send OTP",
+      error: err.message, // helpful for debugging
+    });
   }
 };
+
 
 // ============================
 // Step 2: Verify OTP & Create Account
@@ -299,8 +317,15 @@ export const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
+    // ✅ Input validation
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
     const stored = otpStore.get(email);
-    if (!stored) return res.status(400).json({ message: "No OTP found or expired" });
+    if (!stored) {
+      return res.status(400).json({ message: "No OTP found or expired" });
+    }
 
     if (stored.expiresAt < Date.now()) {
       otpStore.delete(email);
@@ -312,6 +337,7 @@ export const verifyOtp = async (req, res) => {
     }
 
     const { name, password } = stored.data;
+
     const newUser = new User({
       name,
       email,
@@ -320,6 +346,7 @@ export const verifyOtp = async (req, res) => {
     });
     await newUser.save();
 
+    // ✅ Remove OTP from store once used
     otpStore.delete(email);
 
     const token = jwt.sign(
@@ -340,6 +367,9 @@ export const verifyOtp = async (req, res) => {
     });
   } catch (err) {
     console.error("Verify OTP error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+      error: err.message, // helpful debugging
+    });
   }
 };
