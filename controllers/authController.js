@@ -164,7 +164,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import nodemailer from "nodemailer";
-import otpStore from "../models/utils/otpStore.js";   
+import otpStore from "../models/utils/otpStore.js";
 
 // ============================
 // Controller: User Signup (direct signup without OTP)
@@ -249,6 +249,8 @@ export const login = async (req, res) => {
   }
 };
 
+
+
 // ============================
 // Step 1: Send OTP (with validation)
 // ============================
@@ -332,7 +334,8 @@ export const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "OTP expired" });
     }
 
-    if (stored.otp != otp) {
+    // ✅ Handle number/string mismatch
+    if (parseInt(stored.otp) !== parseInt(otp)) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
@@ -344,11 +347,21 @@ export const verifyOtp = async (req, res) => {
       password,
       role: email === process.env.ADMIN_EMAIL ? "admin" : "customer",
     });
-    await newUser.save();
+
+    // ✅ Duplicate email error handle
+    try {
+      await newUser.save();
+    } catch (err) {
+      if (err.code === 11000) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+      throw err; // rethrow other errors
+    }
 
     // ✅ Remove OTP from store once used
     otpStore.delete(email);
 
+    // ✅ JWT generate
     const token = jwt.sign(
       { id: newUser._id, role: newUser.role },
       process.env.JWT_SECRET,
